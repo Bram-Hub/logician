@@ -24,6 +24,13 @@ impl ExprKind {
             _ => unreachable!(),
         }
     }
+
+    fn is_operation(self) -> bool {
+        match self {
+            Self::Conjunction | Self::Disjunction | Self::Negation => true,
+            _ => false,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -166,7 +173,8 @@ impl Statement {
     }
 
     pub fn size(&self) -> usize {
-        self.tree_size
+        // self.tree_size
+        self.exprs.iter().filter(|e| e.kind.is_operation()).count()
     }
 
     pub fn usage(&self) -> f64 {

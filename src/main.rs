@@ -21,6 +21,7 @@ impl BooleanProblem {
     }
 
     fn verify(&self, statement: &Statement) {
+        statement.sanity_check();
         assert_eq!(self.table, statement.generate_truth_table(&self.vars));
     }
 }
