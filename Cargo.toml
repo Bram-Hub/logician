@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 argmin = "0.10.0"
 fastrand = "2.0.2"
+rayon = "1.10.0"

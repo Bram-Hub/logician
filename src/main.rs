@@ -1,6 +1,8 @@
 mod parser;
 mod expr;
 
+use std::{env, sync::mpsc::channel};
+
 use argmin::{core::{CostFunction, Executor, State, observers::{Observe, ObserverMode}}, solver::simulatedannealing::{Anneal, SimulatedAnnealing}};
 use expr::Statement;
 use parser::parse;
@@ -16,6 +18,10 @@ impl BooleanProblem {
         let table = statement.generate_truth_table(&vars);
 
         Self { table, vars }
+    }
+
+    fn verify(&self, statement: &Statement) {
+        assert_eq!(self.table, statement.generate_truth_table(&self.vars));
     }
 }
 
@@ -50,32 +56,58 @@ impl Anneal for BooleanProblem {
     }
 }
 
-struct Logger;
+struct Logger {
+    worker: usize,
+}
 
 impl<I: State<Param = Statement>> Observe<I> for Logger {
     fn observe_iter(&mut self, state: &I, _kv: &argmin::core::KV) -> Result<(), argmin::core::Error> {
-        print!("{} ({}) | ", state.get_best_param().unwrap(), state.get_best_cost());
-        println!("{} ({})", state.get_param().unwrap(), state.get_cost());
+        println!("[WORKER {}]\tBest size: {}", self.worker, state.get_best_cost());
+        Ok(())
+    }
+
+    fn observe_final(&mut self, state: &I) -> Result<(), argmin::core::Error> {
+        println!("[WORKER {}]\tBest: {} (size = {})", self.worker, state.get_best_param().unwrap(), state.get_best_cost());
         Ok(())
     }
 }
 
+const RESET_ATTEMPTS: usize = 100;
+const WORKERS: usize = 12;
+
 fn main() {
-    let initial = parse(b"A | A | B").unwrap();
-    let problem = BooleanProblem::new(&initial);
-    let observer = Logger;
-    let solver = SimulatedAnnealing::new(100.0)
-        .unwrap()
-        .with_reannealing_accepted(100);
-    let result = Executor::new(problem, solver)
-        .add_observer(observer, ObserverMode::Always)
-        .configure(|state| state.max_iters(1000).param(initial))
-        .run()
-        .expect("Failed to optimize");
+    let mut statement = parse(env::args().nth(1).unwrap().as_bytes()).unwrap();
 
-    let best = result.state().get_best_param().unwrap();
+    for _ in 0..RESET_ATTEMPTS {
+        let (tx, rx) = channel::<Statement>();
+        let statement_ref = &statement;
 
-    println!("{best}");
+        rayon::scope(move |s| {
+            for i in 0..WORKERS {
+                let tx = tx.clone();
+                s.spawn(move |_| {
+                    let solver = SimulatedAnnealing::new(100.0)
+                        .unwrap()
+                        .with_reannealing_best(2000)
+                        .with_stall_best(1000000)
+                        .with_reannealing_accepted(1000);
+
+                    let result = Executor::new(BooleanProblem::new(statement_ref), solver)
+                        .add_observer(Logger { worker: i }, ObserverMode::NewBest)
+                        .configure(|state| state.param(statement_ref.clone()))
+                        .run()
+                        .expect("Failed to optimize");
+
+                    let best = result.state().get_best_param().unwrap().clone();
+                    result.problem.problem.unwrap().verify(&best);
+                    tx.send(best).unwrap();
+                });
+            }
+        });
+
+        statement = rx.iter().min_by_key(|s| s.size()).unwrap();
+    }
+
 }
 
 #[cfg(test)]
