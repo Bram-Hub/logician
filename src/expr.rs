@@ -107,43 +107,43 @@ impl Statement {
         Self { root, exprs, free_list: None, tree_size }
     }
 
-    pub fn locate(&self, locator: &str) -> ExprRef {
-        let mut node = self.root;
+    // pub fn locate(&self, locator: &str) -> ExprRef {
+    //     let mut node = self.root;
 
-        for c in locator.bytes() {
-            let expr = self.exprs[node];
+    //     for c in locator.bytes() {
+    //         let expr = self.exprs[node];
 
-            node = match c {
-                b'<' => { assert!(expr.kind == ExprKind::Conjunction || expr.kind == ExprKind::Disjunction); expr.a }
-                b'>' => { assert!(expr.kind == ExprKind::Conjunction || expr.kind == ExprKind::Disjunction); expr.b }
-                b'v' => { assert!(expr.kind == ExprKind::Negation); expr.a }
-                _ => panic!("Invalid character in locator"),
-            };
-        }
+    //         node = match c {
+    //             b'<' => { assert!(expr.kind == ExprKind::Conjunction || expr.kind == ExprKind::Disjunction); expr.a }
+    //             b'>' => { assert!(expr.kind == ExprKind::Conjunction || expr.kind == ExprKind::Disjunction); expr.b }
+    //             b'v' => { assert!(expr.kind == ExprKind::Negation); expr.a }
+    //             _ => panic!("Invalid character in locator"),
+    //         };
+    //     }
 
-        node
-    }
+    //     node
+    // }
 
-    pub fn next(&mut self) -> ExprRef {
-        let mut cursor = fastrand::usize(0..self.exprs.len());
-        let mut first = true;
+    // pub fn next(&mut self) -> ExprRef {
+    //     let mut cursor = fastrand::usize(0..self.exprs.len());
+    //     let mut first = true;
 
-        let start = cursor;
+    //     let start = cursor;
 
-        loop {
-            assert!(first || cursor != start);
+    //     loop {
+    //         assert!(first || cursor != start);
 
-            if let ExprKind::Free(_) = self.exprs[cursor].kind {
-                cursor += 1;
-                cursor %= self.exprs.len();
-                first = false;
+    //         if let ExprKind::Free(_) = self.exprs[cursor].kind {
+    //             cursor += 1;
+    //             cursor %= self.exprs.len();
+    //             first = false;
 
-                continue;
-            }
+    //             continue;
+    //         }
 
-            return cursor;
-        }
-    }
+    //         return cursor;
+    //     }
+    // }
 
     pub fn try_apply(&mut self, f: fn (&mut Self, ExprRef) -> bool) -> bool {
         let mut cursor = fastrand::usize(0..self.exprs.len());
@@ -177,13 +177,13 @@ impl Statement {
         self.exprs.iter().filter(|e| e.kind.is_operation()).count()
     }
 
-    pub fn usage(&self) -> f64 {
-        self.size() as f64 / self.exprs.len() as f64
-    }
+    // pub fn usage(&self) -> f64 {
+    //     self.size() as f64 / self.exprs.len() as f64
+    // }
 
-    pub fn any_fraction(&self) -> f64 {
-        self.exprs.iter().filter(|e| e.kind == ExprKind::Any).count() as f64 / self.exprs.len() as f64
-    }
+    // pub fn any_fraction(&self) -> f64 {
+    //     self.exprs.iter().filter(|e| e.kind == ExprKind::Any).count() as f64 / self.exprs.len() as f64
+    // }
 
     pub fn get_vars(&self) -> Box<[u8]> {
         let mut vars = self.exprs.iter().filter_map(|e| if let ExprKind::Atomic(c) = e.kind { Some(c) } else { None }).collect::<Vec<_>>();
@@ -262,19 +262,19 @@ impl Statement {
         }
     }
 
-    fn assert_atomic(&mut self, node: ExprRef, kind: ExprKind) -> bool {
-        let expr = self.exprs[node];
+    // fn assert_atomic(&mut self, node: ExprRef, kind: ExprKind) -> bool {
+    //     let expr = self.exprs[node];
 
-        match expr.kind {
-            ExprKind::Free(_) => unreachable!(),
-            ExprKind::Any => {
-                self.exprs[node].kind = kind;
-                true
-            }
+    //     match expr.kind {
+    //         ExprKind::Free(_) => unreachable!(),
+    //         ExprKind::Any => {
+    //             self.exprs[node].kind = kind;
+    //             true
+    //         }
 
-            k => k == kind,
-        }
-    }
+    //         k => k == kind,
+    //     }
+    // }
 
     fn order_eq_exprs(&mut self, a: ExprRef, b: ExprRef) -> Option<(ExprRef, ExprRef)> {
         let expr_a = self.exprs[a];
@@ -416,9 +416,9 @@ macro_rules! build_tables {
             $(Self::$name),+
         ];
 
-        pub const EQUIVALENCE_NAMES: [&'static str; $length] = [
-            $(stringify!($name)),+
-        ];
+        // pub const EQUIVALENCE_NAMES: [&'static str; $length] = [
+        //     $(stringify!($name)),+
+        // ];
     };
 }
 
@@ -551,7 +551,7 @@ impl Statement {
         ensure!(expr.kind == ExprKind::Conjunction || expr.kind == ExprKind::Disjunction);
         ensure!(self.assert_negation(expr.a) && self.assert_negation(expr.b));
 
-        let lhs = self.exprs[expr.a];
+        // let lhs = self.exprs[expr.a];
         let rhs = self.exprs[expr.b];
         let dual_kind = expr.kind.get_dual();
 
@@ -569,7 +569,7 @@ impl Statement {
 
         let dual_kind = expr.kind.get_dual();
         ensure!(self.assert_binary(expr.b, dual_kind));
-        let rhs = self.exprs[expr.b];
+        // let rhs = self.exprs[expr.b];
 
         let lhs_copy = self.expr_copy(expr.a);
         let binary = self.expr_new(expr.kind, expr.a, self.exprs[expr.b].a);
@@ -633,7 +633,7 @@ impl Statement {
         let expr = self.exprs[node];
         ensure!(expr.kind == ExprKind::Conjunction || expr.kind == ExprKind::Disjunction);
 
-        let lhs = self.exprs[expr.a];
+        // let lhs = self.exprs[expr.a];
         let rhs = self.exprs[expr.b];
         ensure!(rhs.kind == ExprKind::Negation);
         ensure!(self.expr_eq(expr.a, rhs.a));
@@ -650,22 +650,22 @@ impl Statement {
         true
     }
 
-    pub fn inv_complement(&mut self, node: ExprRef) -> bool {
-        let expr = self.exprs[node];
-        ensure!(expr.kind == ExprKind::Contradiction || expr.kind == ExprKind::Tautology);
+    // pub fn inv_complement(&mut self, node: ExprRef) -> bool {
+    //     let expr = self.exprs[node];
+    //     ensure!(expr.kind == ExprKind::Contradiction || expr.kind == ExprKind::Tautology);
 
-        self.exprs[node].kind = match expr.kind {
-            ExprKind::Contradiction => ExprKind::Conjunction,
-            ExprKind::Tautology => ExprKind::Disjunction,
-            _ => unreachable!(),
-        };
+    //     self.exprs[node].kind = match expr.kind {
+    //         ExprKind::Contradiction => ExprKind::Conjunction,
+    //         ExprKind::Tautology => ExprKind::Disjunction,
+    //         _ => unreachable!(),
+    //     };
 
-        let inner = self.expr_new(ExprKind::Any, 0, 0);
-        self.exprs[node].a = self.expr_new(ExprKind::Any, 0, 0);
-        self.exprs[node].b = self.expr_new(ExprKind::Negation, inner, 0);
+    //     let inner = self.expr_new(ExprKind::Any, 0, 0);
+    //     self.exprs[node].a = self.expr_new(ExprKind::Any, 0, 0);
+    //     self.exprs[node].b = self.expr_new(ExprKind::Negation, inner, 0);
 
-        true
-    }
+    //     true
+    // }
 
     pub fn fwd_identity(&mut self, node: ExprRef) -> bool {
         let expr = self.exprs[node];
@@ -727,21 +727,21 @@ impl Statement {
         true
     }
 
-    pub fn inv_annihilation(&mut self, node: ExprRef) -> bool {
-        let expr = self.exprs[node];
-        ensure!(expr.kind == ExprKind::Contradiction || expr.kind == ExprKind::Tautology);
+    // pub fn inv_annihilation(&mut self, node: ExprRef) -> bool {
+    //     let expr = self.exprs[node];
+    //     ensure!(expr.kind == ExprKind::Contradiction || expr.kind == ExprKind::Tautology);
 
-        self.exprs[node].kind = match expr.kind {
-            ExprKind::Contradiction => ExprKind::Conjunction,
-            ExprKind::Tautology => ExprKind::Disjunction,
-            _ => unreachable!(),
-        };
+    //     self.exprs[node].kind = match expr.kind {
+    //         ExprKind::Contradiction => ExprKind::Conjunction,
+    //         ExprKind::Tautology => ExprKind::Disjunction,
+    //         _ => unreachable!(),
+    //     };
 
-        self.exprs[node].a = self.expr_new(ExprKind::Any, 0, 0);
-        self.exprs[node].b = self.expr_new(expr.kind, 0, 0);
+    //     self.exprs[node].a = self.expr_new(ExprKind::Any, 0, 0);
+    //     self.exprs[node].b = self.expr_new(expr.kind, 0, 0);
 
-        true
-    }
+    //     true
+    // }
 
     pub fn fwd_inverse(&mut self, node: ExprRef) -> bool {
         let expr = self.exprs[node];
@@ -785,33 +785,33 @@ impl Statement {
         true
     }
 
-    pub fn inv_con_absorption(&mut self, node: ExprRef) -> bool {
-        let expr = self.exprs[node];
-        let a = self.expr_new(expr.kind, expr.a, expr.b);
-        let copy = self.expr_copy(node);
-        let any = self.expr_new(ExprKind::Any, 0, 0);
-        let b = self.expr_new(ExprKind::Disjunction, copy, any);
+    // pub fn inv_con_absorption(&mut self, node: ExprRef) -> bool {
+    //     let expr = self.exprs[node];
+    //     let a = self.expr_new(expr.kind, expr.a, expr.b);
+    //     let copy = self.expr_copy(node);
+    //     let any = self.expr_new(ExprKind::Any, 0, 0);
+    //     let b = self.expr_new(ExprKind::Disjunction, copy, any);
 
-        self.exprs[node].kind = ExprKind::Conjunction;
-        self.exprs[node].a = a;
-        self.exprs[node].b = b;
+    //     self.exprs[node].kind = ExprKind::Conjunction;
+    //     self.exprs[node].a = a;
+    //     self.exprs[node].b = b;
 
-        true
-    }
+    //     true
+    // }
 
-    pub fn inv_dis_absorption(&mut self, node: ExprRef) -> bool {
-        let expr = self.exprs[node];
-        let a = self.expr_new(expr.kind, expr.a, expr.b);
-        let copy = self.expr_copy(node);
-        let any = self.expr_new(ExprKind::Any, 0, 0);
-        let b = self.expr_new(ExprKind::Conjunction, copy, any);
+    // pub fn inv_dis_absorption(&mut self, node: ExprRef) -> bool {
+    //     let expr = self.exprs[node];
+    //     let a = self.expr_new(expr.kind, expr.a, expr.b);
+    //     let copy = self.expr_copy(node);
+    //     let any = self.expr_new(ExprKind::Any, 0, 0);
+    //     let b = self.expr_new(ExprKind::Conjunction, copy, any);
 
-        self.exprs[node].kind = ExprKind::Disjunction;
-        self.exprs[node].a = a;
-        self.exprs[node].b = b;
+    //     self.exprs[node].kind = ExprKind::Disjunction;
+    //     self.exprs[node].a = a;
+    //     self.exprs[node].b = b;
 
-        true
-    }
+    //     true
+    // }
 
     pub fn fwd_reduction(&mut self, node: ExprRef) -> bool {
         let expr = self.exprs[node];
@@ -873,37 +873,37 @@ impl Statement {
         true
     }
 
-    pub fn inv_con_adjacency(&mut self, node: ExprRef) -> bool {
-        let expr = self.exprs[node];
-        let a = self.expr_new(expr.kind, expr.a, expr.b);
-        let copy = self.expr_copy(node);
-        let any_a = self.expr_new(ExprKind::Any, 0, 0);
-        let any_b = self.expr_new(ExprKind::Any, 0, 0);
-        let negation = self.expr_new(ExprKind::Negation, any_b, 0);
-        let lhs = self.expr_new(ExprKind::Disjunction, a, any_a);
-        let rhs = self.expr_new(ExprKind::Disjunction, copy, negation);
+    // pub fn inv_con_adjacency(&mut self, node: ExprRef) -> bool {
+    //     let expr = self.exprs[node];
+    //     let a = self.expr_new(expr.kind, expr.a, expr.b);
+    //     let copy = self.expr_copy(node);
+    //     let any_a = self.expr_new(ExprKind::Any, 0, 0);
+    //     let any_b = self.expr_new(ExprKind::Any, 0, 0);
+    //     let negation = self.expr_new(ExprKind::Negation, any_b, 0);
+    //     let lhs = self.expr_new(ExprKind::Disjunction, a, any_a);
+    //     let rhs = self.expr_new(ExprKind::Disjunction, copy, negation);
 
-        self.exprs[node].kind = ExprKind::Conjunction;
-        self.exprs[node].a = lhs;
-        self.exprs[node].b = rhs;
+    //     self.exprs[node].kind = ExprKind::Conjunction;
+    //     self.exprs[node].a = lhs;
+    //     self.exprs[node].b = rhs;
 
-        true
-    }
+    //     true
+    // }
 
-    pub fn inv_dis_adjacency(&mut self, node: ExprRef) -> bool {
-        let expr = self.exprs[node];
-        let a = self.expr_new(expr.kind, expr.a, expr.b);
-        let copy = self.expr_copy(node);
-        let any_a = self.expr_new(ExprKind::Any, 0, 0);
-        let any_b = self.expr_new(ExprKind::Any, 0, 0);
-        let negation = self.expr_new(ExprKind::Negation, any_b, 0);
-        let lhs = self.expr_new(ExprKind::Conjunction, a, any_a);
-        let rhs = self.expr_new(ExprKind::Conjunction, copy, negation);
+    // pub fn inv_dis_adjacency(&mut self, node: ExprRef) -> bool {
+    //     let expr = self.exprs[node];
+    //     let a = self.expr_new(expr.kind, expr.a, expr.b);
+    //     let copy = self.expr_copy(node);
+    //     let any_a = self.expr_new(ExprKind::Any, 0, 0);
+    //     let any_b = self.expr_new(ExprKind::Any, 0, 0);
+    //     let negation = self.expr_new(ExprKind::Negation, any_b, 0);
+    //     let lhs = self.expr_new(ExprKind::Conjunction, a, any_a);
+    //     let rhs = self.expr_new(ExprKind::Conjunction, copy, negation);
 
-        self.exprs[node].kind = ExprKind::Disjunction;
-        self.exprs[node].a = lhs;
-        self.exprs[node].b = rhs;
+    //     self.exprs[node].kind = ExprKind::Disjunction;
+    //     self.exprs[node].a = lhs;
+    //     self.exprs[node].b = rhs;
 
-        true
-    }
+    //     true
+    // }
 }

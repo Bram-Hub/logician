@@ -1,7 +1,7 @@
 use std::result;
 use crate::expr::{ Statement, Expr, ExprRef };
 
-type Result<T> = result::Result<T, String>;
+pub type Result<T> = result::Result<T, String>;
 
 struct Parser<'a> {
     source: &'a [u8],
@@ -74,8 +74,8 @@ impl<'a> Parser<'a> {
                 self.skip_whitespace();
 
                 if self.current == b')' {
-                        self.advance();
-                        Ok(result)
+                    self.advance();
+                    Ok(result)
                 }
                 else {
                     Err(format!("Expected a ')' but found '{}'", self.current))

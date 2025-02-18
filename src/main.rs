@@ -1,11 +1,11 @@
 mod parser;
 mod expr;
 
-use std::{env, sync::mpsc::channel};
-
+use std::{fs, path::PathBuf, sync::mpsc::channel};
+use clap::{Parser, Subcommand};
 use argmin::{core::{CostFunction, Executor, State, observers::{Observe, ObserverMode}}, solver::simulatedannealing::{Anneal, SimulatedAnnealing}};
 use expr::Statement;
-use parser::parse;
+use parser::{Result as PResult, parse};
 
 struct BooleanProblem {
     table: Box<[bool]>,
@@ -76,8 +76,44 @@ impl<I: State<Param = Statement>> Observe<I> for Logger {
 const RESET_ATTEMPTS: usize = 100;
 const WORKERS: usize = 12;
 
+#[derive(Parser)]
+#[command(about, long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    Simplify { expr: String },
+    Decide { path: PathBuf },
+}
+
+fn read_argument(path: PathBuf) -> PResult<Statement> {
+    let string = fs::read_to_string(path).unwrap();
+    let lines = string.lines().collect::<Vec<_>>();
+    let mut argument = String::new();
+
+    let (conclusion, lines) = lines.split_last().expect("Empty argument file");
+
+    for line in lines {
+        argument.push('(');
+        argument.push_str(line);
+        argument.push_str(")&");
+    }
+
+    argument.push_str("~(");
+    argument.push_str(conclusion);
+    argument.push(')');
+
+    parse(dbg!(argument).as_bytes())
+}
+
 fn main() {
-    let mut statement = parse(env::args().nth(1).unwrap().as_bytes()).unwrap();
+    let mut statement = match Cli::parse().command {
+        Commands::Simplify { expr } => parse(expr.as_bytes()).unwrap(),
+        Commands::Decide { path } => read_argument(path).unwrap(),
+    };
 
     for _ in 0..RESET_ATTEMPTS {
         let (tx, rx) = channel::<Statement>();
