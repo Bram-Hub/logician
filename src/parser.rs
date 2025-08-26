@@ -16,7 +16,27 @@ impl<'a> Parser<'a> {
     }
 
     fn expr(&mut self) -> Result<ExprRef> {
-        self.disjunction()
+        self.conditional()
+    }
+
+    fn conditional(&mut self) -> Result<ExprRef> {
+        let mut expr = self.disjunction()?;
+
+        loop {
+            self.skip_whitespace();
+
+            if self.current == b'>' {
+                self.advance();
+                let rhs = self.disjunction()?;
+                expr = self.create_negation(expr);
+                expr = self.create_disjunction(expr, rhs);
+            }
+            else {
+                break;
+            }
+        }
+
+        Ok(expr)
     }
 
     fn disjunction(&mut self) -> Result<ExprRef> {
